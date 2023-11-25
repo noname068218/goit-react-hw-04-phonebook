@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { useEffect, useState } from 'react';
 import { GlobalStyle } from '../Global';
 import { nanoid } from 'nanoid';
 import { Layout } from './Layout';
@@ -12,35 +12,24 @@ import 'react-toastify/dist/ReactToastify.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { ThemeProviderWrapper } from './Theme';
 
-const keyStorage = 'phone-contacts';
-export class App extends Component {
-  state = {
-    contacts: [],
-    filter: '',
-    name: '',
-    number: '',
-  };
+const LOCAL_STORAGE_KEY = 'phone-contacts';
+const getInitialContacts = () => {
+  const saveContacts = window.localStorage.getItem(LOCAL_STORAGE_KEY);
+  return saveContacts !== null ? JSON.parse(saveContacts) : [];
+};
 
-  componentDidMount() {
-    const saveContacts = window.localStorage.getItem(keyStorage);
-    if (saveContacts !== null) {
-      this.setState({
-        contacts: JSON.parse(saveContacts),
-      });
-    }
-  }
+export const App = () => {
+  const [contacts, setContacts] = useState(getInitialContacts);
+  const [filter, setFilter] = useState('');
 
-  componentDidUpdate(prevProps, prevState) {
-    if (prevState.contact !== this.state.contacts) {
-      window.localStorage.setItem(
-        keyStorage,
-        JSON.stringify(this.state.contacts)
-      );
-    }
-  }
+  useEffect(
+    () =>
+      window.localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(contacts)),
+    [contacts]
+  );
 
-  addContact = newContact => {
-    const isNameExist = this.state.contacts.some(
+  const addContact = newContact => {
+    const isNameExist = contacts.some(
       contact => contact.name.toLowerCase() === newContact.name.toLowerCase()
     );
 
@@ -54,54 +43,41 @@ export class App extends Component {
       id: nanoid(),
     };
 
-    this.setState(prevState => ({
-      contacts: [...prevState.contacts, contact],
-    }));
+    setContacts(prevState => [...prevState, contact]);
   };
 
-  deleteItem = contactId => {
-    this.setState(prevState => ({
-      contacts: prevState.contacts.filter(item => item.id !== contactId),
-    }));
+  const deleteItem = contactId => {
+    setContacts(prevState =>
+      prevState.filter(contact => contact.id !== contactId)
+    );
   };
 
-  handleFilterChange = event => {
+  const handleFilterChange = event => {
     const { value } = event.target;
-    this.setState({
-      filter: value,
-    });
-  };
-  visibleContacts = () => {
-    const { contacts, filter } = this.state;
-    return contacts.filter(item =>
-      item.name.toLowerCase().includes(filter.toLowerCase())
-    );
+    setFilter(value);
   };
 
-  render() {
-    const { contacts, filter } = this.state;
-    const visibleContacts = this.visibleContacts();
-    return (
-      <Layout>
-        <ThemeProviderWrapper />
-        <Section title="Phonebook">
-          <AnimationText />
-          <ContactForm onAdd={this.addContact} />
-          {contacts.length > 0 && (
-            <>
-              <SearchBar filter={filter} onSearch={this.handleFilterChange} />
-              <Section title="Contacts">
-                <ContactList
-                  contacts={visibleContacts}
-                  onDelete={this.deleteItem}
-                />
-              </Section>
-            </>
-          )}
-        </Section>
-        <GlobalStyle />
-        <ToastContainer />
-      </Layout>
-    );
-  }
-}
+  const visibleContacts = contacts.filter(item =>
+    item.name.toLowerCase().includes(filter.toLowerCase())
+  );
+
+  return (
+    <Layout>
+      <ThemeProviderWrapper />
+      <Section title="Phonebook">
+        <AnimationText />
+        <ContactForm onAdd={addContact} />
+        {contacts.length > 0 && (
+          <>
+            <SearchBar filter={filter} onSearch={handleFilterChange} />
+            <Section title="Contacts">
+              <ContactList contacts={visibleContacts} onDelete={deleteItem} />
+            </Section>
+          </>
+        )}
+      </Section>
+      <GlobalStyle />
+      <ToastContainer />
+    </Layout>
+  );
+};
