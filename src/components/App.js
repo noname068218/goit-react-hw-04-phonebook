@@ -13,6 +13,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import { ThemeProviderWrapper } from './Theme';
 
 const LOCAL_STORAGE_KEY = 'phone-contacts';
+
 const getInitialContacts = () => {
   const saveContacts = window.localStorage.getItem(LOCAL_STORAGE_KEY);
   return saveContacts !== null ? JSON.parse(saveContacts) : [];
@@ -76,6 +77,7 @@ export const App = () => {
           </>
         )}
       </Section>
+
       <GlobalStyle />
       <ToastContainer />
     </Layout>
